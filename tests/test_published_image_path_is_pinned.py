@@ -22,9 +22,24 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORKFLOW = os.path.join(ROOT, ".github", "workflows", "docker.yml")
 
 
-def _env():
+def _workflow():
     with open(WORKFLOW, encoding="utf-8") as fh:
-        return yaml.safe_load(fh)["env"]
+        return yaml.safe_load(fh)
+
+
+def _env():
+    return _workflow()["env"]
+
+
+def test_publish_jobs_only_run_in_the_official_repository():
+    jobs = _workflow()["jobs"]
+    official_repo_gate = "github.repository == 'debpalash/VoiceStudio'"
+    for job_name in ("build-and-push", "build-and-push-rocm"):
+        assert jobs[job_name].get("if") == official_repo_gate, (
+            f"{job_name} is not gated to the official repository — forks would "
+            "build the full image and then fail while pushing to the pinned "
+            "debpalash GHCR package"
+        )
 
 
 def test_the_ghcr_path_does_not_follow_the_repository_name():

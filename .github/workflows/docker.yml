@@ -22,7 +22,9 @@
 #   :0.3-rocm       — major.minor floating tag, ROCm build
 #   :sha-xxxx-rocm  — specific commit SHA, ROCm build
 #
-# Images land at: ghcr.io/debpalash/omnivoice-studio AND docker.io/palashdeb/omnivoice-studio
+# Images land at: ghcr.io/debpalash/omnivoice-studio AND docker.io/palashdeb/omnivoice-studio.
+# Publication jobs run only in debpalash/VoiceStudio; forks skip them because a
+# fork's GITHUB_TOKEN cannot push to the pinned official GHCR package.
 # (Docker Hub push gated on the DOCKERHUB_USERNAME/DOCKERHUB_TOKEN secrets;
 # if unset the build still pushes to GHCR.)
 #
@@ -63,6 +65,7 @@ env:
 
 jobs:
   build-and-push:
+    if: github.repository == 'debpalash/VoiceStudio'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -94,8 +97,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Docker Hub login — only when the secret is present, so forks / runs
-      # without the credential still publish to GHCR.
+      # Docker Hub login — only when the secret is present, so runs without
+      # the credential still publish to GHCR.
       - name: Check Docker Hub credentials
         id: dockerhub
         run: echo "enabled=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
@@ -174,6 +177,7 @@ jobs:
   # build step — so it gets a full runner disk to itself: the ROCm base alone
   # is ~10 GB compressed / ~25 GB unpacked.
   build-and-push-rocm:
+    if: github.repository == 'debpalash/VoiceStudio'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -201,7 +205,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Same Docker Hub gating as the CUDA job: push there only when the
-      # secret exists, so forks still publish to GHCR.
+      # secret exists.
       - name: Check Docker Hub credentials
         id: dockerhub
         run: echo "enabled=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
